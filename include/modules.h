@@ -3,14 +3,12 @@
 
 #include <stddef.h>
 
-typedef struct proxy_connection {
-    int client_fd;
-    int backend_fd;
-} proxy_connection_t;
+#define MODULE_DATA_TO_BACKEND    0
+#define MODULE_DATA_FROM_BACKEND  1
 
-typedef void (*on_connect_cb)(proxy_connection_t *conn);
-typedef void (*on_disconnect_cb)(proxy_connection_t *conn);
-typedef void (*on_data_cb)(proxy_connection_t *conn, unsigned char *buffer, size_t len);
+typedef void (*on_connect_cb)(const char *client_ip, int client_port);
+typedef void (*on_disconnect_cb)(const char *client_ip, int client_port);
+typedef void (*on_data_cb)(int direction, size_t bytes);
 
 typedef struct proxy_module {
     const char *name;
@@ -20,9 +18,11 @@ typedef struct proxy_module {
 } proxy_module_t;
 
 int proxy_register_module(const proxy_module_t *module);
-
 int proxy_unregister_module(const char *module_name);
-
 const proxy_module_t *proxy_get_module(const char *module_name);
+
+void modules_on_connect(const char *ip, int port);
+void modules_on_disconnect(const char *ip, int port);
+void modules_on_data(int direction, size_t bytes);
 
 #endif /* MITM_C_MODULES_H */

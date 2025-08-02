@@ -17,25 +17,33 @@ endif
 
 BIN_DIR  := $(BUILD_DIR)/bin
 OBJ_DIR  := $(BUILD_DIR)/obj
-SRC_DIR  := src
+SRC_DIR := src
+MODULES_DIR := modules
 
-ENABLE_UDP ?= 0
-ENABLE_TLS ?= 0
-
-SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
+SRC_FILES := \
+    $(wildcard $(SRC_DIR)/*.c) \
+    $(wildcard $(MODULES_DIR)/*.c)
 
 ifeq ($(ENABLE_UDP), 1)
-  CFLAGS    += -DENABLE_UDP
   SRC_FILES += $(SRC_DIR)/udp_module.c
+  CFLAGS    += -DENABLE_UDP
 endif
 
 ifeq ($(ENABLE_TLS), 1)
-  CFLAGS    += -DENABLE_TLS
   SRC_FILES += $(SRC_DIR)/tls_module.c
+  CFLAGS    += -DENABLE_TLS
   LDLIBS    += -lssl -lcrypto
 endif
 
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
+OBJ_FILES := $(patsubst %.c, $(OBJ_DIR)/%.o, $(notdir $(SRC_FILES)))
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(MODULES_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: all debug release clean run
 

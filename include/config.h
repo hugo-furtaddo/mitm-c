@@ -20,8 +20,7 @@ typedef struct {
 
 } proxy_config_t;
 
-int load_config(const char *filepath, proxy_config_t *config);
-
+int config_load(const char *filepath, proxy_config_t *config);
 void free_config(proxy_config_t *config);
 
 #endif /* MITM_C_CONFIG_H */
