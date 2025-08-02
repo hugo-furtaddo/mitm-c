@@ -35,6 +35,7 @@ ifeq ($(ENABLE_TLS), 1)
   LDLIBS    += -lssl -lcrypto
 endif
 
+LDLIBS    += -pthread
 OBJ_FILES := $(patsubst %.c, $(OBJ_DIR)/%.o, $(notdir $(SRC_FILES)))
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
