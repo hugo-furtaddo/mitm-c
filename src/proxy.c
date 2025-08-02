@@ -16,7 +16,8 @@
 #include "config.h"
 #include "modules.h"
 #include "utils.h"
-
+#include <pthread.h>
+#include "proxy_thread.h"
 
 static int listen_fd = -1;
 static int proxy_running = 0;
@@ -91,102 +92,27 @@ int start_proxy(const proxy_config_t *config) {
             client_port = 0;
         }
 
-        modules_on_connect(client_ip, client_port);
-
-        int backend_fd = -1;
-        struct addrinfo hints2, *res2;
-        memset(&hints2, 0, sizeof(hints2));
-        hints2.ai_family = AF_UNSPEC;
-        hints2.ai_socktype = SOCK_STREAM;
-        snprintf(port_str, sizeof(port_str), "%d", config->target_port);
-
-        if ((err = getaddrinfo(config->target_host, port_str, &hints2, &res2)) != 0) {
-            log_error("Failed to resolve backend: %s", gai_strerror(err));
-        } else {
-            struct addrinfo *ai2;
-            for (ai2 = res2; ai2 != NULL; ai2 = ai2->ai_next) {
-                backend_fd = socket(ai2->ai_family, ai2->ai_socktype, ai2->ai_protocol);
-                if (backend_fd < 0) continue;
-                if (connect(backend_fd, ai2->ai_addr, ai2->ai_addrlen) == 0) break;
-                close(backend_fd);
-                backend_fd = -1;
-            }
-            freeaddrinfo(res2);
-        }
-
-        if (backend_fd < 0) {
-            log_error("Could not connect to backend %s:%d (DNS ou connect falhou)", config->target_host, config->target_port);
-            modules_on_disconnect(client_ip, client_port);
+        connection_ctx_t *ctx = malloc(sizeof(connection_ctx_t));
+        if (ctx == NULL) {
+            log_error("Failed to allocate memory for connection context");
             close(client_fd);
             continue;
         }
-
-        fd_set readfds;
-        int maxfd = (client_fd > backend_fd ? client_fd : backend_fd);
-        ssize_t n;
-        char buf[4096];
-
-        while (1) {
-            FD_ZERO(&readfds);
-            FD_SET(client_fd, &readfds);
-            FD_SET(backend_fd, &readfds);
-
-            if (select(maxfd + 1, &readfds, NULL, NULL, NULL) < 0) {
-                if (errno == EINTR) continue;
-                log_error("Select error: %s", strerror(errno));
-                break;
-            }
-
-            if (FD_ISSET(client_fd, &readfds)) {
-                n = recv(client_fd, buf, sizeof(buf), 0);
-                if (n <= 0) {
-                    if (n < 0) log_error("Receive error from client: %s", strerror(errno));
-                    break;
-                }
-
-                modules_on_data(MODULE_DATA_TO_BACKEND, (size_t)n);
-
-                ssize_t tosend = n;
-                char *p = buf;
-                while (tosend > 0) {
-                    ssize_t sent = send(backend_fd, p, tosend, 0);
-                    if (sent < 0) {
-                        log_error("Send error to backend: %s", strerror(errno));
-                        break;
-                    }
-                    tosend -= sent;
-                    p += sent;
-                }
-                if (tosend > 0) break;
-            }
-
-            if (FD_ISSET(backend_fd, &readfds)) {
-                n = recv(backend_fd, buf, sizeof(buf), 0);
-                if (n <= 0) {
-                    if (n < 0) log_error("Receive error from backend: %s", strerror(errno));
-                    break;
-                }
-
-                modules_on_data(MODULE_DATA_FROM_BACKEND, (size_t)n);
-
-                ssize_t tosend = n;
-                char *p = buf;
-                while (tosend > 0) {
-                    ssize_t sent = send(client_fd, p, tosend, 0);
-                    if (sent < 0) {
-                        log_error("Send error to client: %s", strerror(errno));
-                        break;
-                    }
-                    tosend -= sent;
-                    p += sent;
-                }
-                if (tosend > 0) break;
-            }
+        ctx->client_fd = client_fd;
+        strncpy(ctx->client_ip, client_ip, sizeof(ctx->client_ip) - 1);
+        ctx->client_ip[sizeof(ctx->client_ip) - 1] = '\0';
+        ctx->client_port = client_port;
+        strncpy(ctx->target_host, config->target_host, sizeof(ctx->target_host) - 1);
+        ctx->target_host[sizeof(ctx->target_host) - 1] = '\0';
+        ctx->target_port = config->target_port;
+        pthread_t thread;
+        if ((err = pthread_create(&thread, NULL, proxy_thread_func, ctx)) != 0) {
+            log_error("Failed to create thread: %s", strerror(err));
+            close(client_fd);
+            free(ctx);
+            continue;
         }
-
-        close(backend_fd);
-        modules_on_disconnect(client_ip, client_port);
-        close(client_fd);
+        pthread_detach(thread);
     }
 
     close(listen_fd);
