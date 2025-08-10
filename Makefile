@@ -1,6 +1,7 @@
 CC       ?= gcc
 CFLAGS   ?=
-CFLAGS   += -std=c99 -Wall -Wextra -Iinclude -MMD -MP
+INCLUDE_DIR := include
+CFLAGS   += -std=c99 -Wall -Wextra -I$(INCLUDE_DIR) -MMD -MP
 LDFLAGS  ?=
 LDLIBS   ?=
 
@@ -19,6 +20,7 @@ BIN_DIR  := $(BUILD_DIR)/bin
 OBJ_DIR  := $(BUILD_DIR)/obj
 SRC_DIR := src
 MODULES_DIR := modules
+CONFIG_DIR := config
 
 SRC_FILES := \
     $(wildcard $(SRC_DIR)/*.c) \

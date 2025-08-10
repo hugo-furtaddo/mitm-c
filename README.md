@@ -29,5 +29,7 @@ make ENABLE_UDP=1 ENABLE_TLS=1
 - `include/` – header files
 - `modules/` – example and user-defined modules
 - `config/` – proxy configuration files
-- `logs/` – runtime logs
+- `tests/` – unit and integration tests
+- `tools/` – auxiliary scripts
+- `docs/` – technical documentation and guides
 - `build/` – compiled binaries and objects
