@@ -4,18 +4,18 @@
 #include <stdint.h>
 
 typedef struct {
-    char listen_host[256];
-    uint16_t listen_port;
+  char listen_host[256];
+  uint16_t listen_port;
 
-    char target_host[256];
-    uint16_t target_port;
+  char target_host[256];
+  uint16_t target_port;
 
 #ifdef ENABLE_UDP
-    int enable_udp;
+  int enable_udp;
 #endif
 
 #ifdef ENABLE_TLS
-    int enable_tls;
+  int enable_tls;
 #endif
 
 } proxy_config_t;

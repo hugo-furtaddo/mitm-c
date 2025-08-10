@@ -1,0 +1,2 @@
+Checks: 'clang-analyzer-*,modernize-*,readability-*,bugprone-*,-readability-identifier-length,-readability-magic-numbers,-readability-braces-around-statements,-readability-isolate-declaration,-readability-inconsistent-declaration-parameter-name,-bugprone-easily-swappable-parameters,-readability-function-cognitive-complexity,-bugprone-reserved-identifier'
+WarningsAsErrors: '*'

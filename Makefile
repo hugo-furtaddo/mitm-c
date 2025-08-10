@@ -26,6 +26,10 @@ SRC_FILES := \
     $(wildcard $(SRC_DIR)/*.c) \
     $(wildcard $(MODULES_DIR)/*.c)
 
+FORMAT_FILES := $(shell find src include modules -name '*.c' -o -name '*.h')
+LINT_FILES := $(shell find src modules -name '*.c')
+TIDY_FLAGS := -std=c99 -I$(INCLUDE_DIR)
+
 ifeq ($(ENABLE_UDP), 1)
   SRC_FILES += $(SRC_DIR)/udp_module.c
   CFLAGS    += -DENABLE_UDP
@@ -50,6 +54,8 @@ $(OBJ_DIR)/%.o: $(MODULES_DIR)/%.c
 
 .PHONY: all debug release clean run
 
+.PHONY: format lint cppcheck
+
 all: $(BIN_DIR)/$(TARGET)
 
 debug:
@@ -73,3 +79,12 @@ $(BIN_DIR)/$(TARGET): $(OBJ_FILES)
 
 clean:
 	rm -rf build/
+
+format:
+	clang-format -i $(FORMAT_FILES)
+
+lint:
+	clang-tidy $(LINT_FILES) -extra-arg=-w -- $(TIDY_FLAGS)
+
+cppcheck:
+	cppcheck --enable=warning,performance,portability --std=c99 --error-exitcode=1 --suppress=missingIncludeSystem -I$(INCLUDE_DIR) src modules

@@ -3,18 +3,18 @@
 
 #include <stddef.h>
 
-#define MODULE_DATA_TO_BACKEND    0
-#define MODULE_DATA_FROM_BACKEND  1
+#define MODULE_DATA_TO_BACKEND 0
+#define MODULE_DATA_FROM_BACKEND 1
 
 typedef void (*on_connect_cb)(const char *client_ip, int client_port);
 typedef void (*on_disconnect_cb)(const char *client_ip, int client_port);
 typedef void (*on_data_cb)(int direction, size_t bytes);
 
 typedef struct proxy_module {
-    const char *name;
-    on_connect_cb on_connect;
-    on_data_cb on_data;
-    on_disconnect_cb on_disconnect;
+  const char *name;
+  on_connect_cb on_connect;
+  on_data_cb on_data;
+  on_disconnect_cb on_disconnect;
 } proxy_module_t;
 
 int proxy_register_module(const proxy_module_t *module);
