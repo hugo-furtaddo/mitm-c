@@ -7,7 +7,7 @@
 
 int main(void) {
     proxy_config_t config;
-    if (config_load("proxy.conf", &config) != 0)
+    if (config_load("config/proxy.conf", &config) != 0)
         return EXIT_FAILURE;
 
     if (proxy_register_module(register_logger_module()) != 0)
